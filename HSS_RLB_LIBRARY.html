@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HSS Rani Lakshmibai Shakha Library</title>
+</head>
+<body>
+<img src = "logo.png" width = 350px height =350px>
+  <h2>HSS Rani Lakshmibai Shakha Library</h2>
+
+  <label>Name: </label>
+  <input type="text" id="nameInput"><br><br>
+
+  <label>Book: </label>
+  <input type="text" id="bookInput"><br><br>
+
+  <button onclick="borrowBook()">Borrow</button>
+  <button onclick="returnBook()">Return</button>
+
+  <pre id="output"></pre>
+
+  <script>
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzZnKHU2PqUXi0OLmpTEVYHqy8UoAzsWd30ARnqJSh4vspz7nZrWZl846hXAgJvKwTQ/exec"; 
+    // replace with your deployed Apps Script URL
+
+    function borrowBook() {
+      let name = document.getElementById("nameInput").value.trim();
+      let book = document.getElementById("bookInput").value.trim();
+
+      let data = new URLSearchParams();
+      data.append("name", name);
+      data.append("book", book);
+
+      fetch(scriptURL, {
+        method: "POST",
+        body: data,
+        headers: { "Content-Type": "application/x-www-form-urlencoded" }
+      })
+      .then(res => res.json())
+      .then(json => {
+        
+      })
+      .catch(err => {
+        document.getElementById("output").textContent = "Error: " + err;
+      });
+    }
+    function returnBook() {
+      let name = "In box";
+      let book = document.getElementById("bookInput").value.trim();
+
+      let data = new URLSearchParams();
+      data.append("name", name);
+      data.append("book", book);
+
+      fetch(scriptURL, {
+        method: "POST",
+        body: data,
+        headers: { "Content-Type": "application/x-www-form-urlencoded" }
+      })
+      .then(res => res.json())
+      .then(json => {
+        
+      })
+      .catch(err => {
+        document.getElementById("output").textContent = "Error: " + err;
+      });
+    }
+  </script>
+</body>
+</html>
