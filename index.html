@@ -2,6 +2,28 @@
 <html>
 <head>
   <title>HSS Rani Lakshmibai Shakha Library</title>
+
+<style>
+button {
+  color: #ea5207;
+  font-family: "Arial", sans-serif;
+}
+body {
+  color: #ea5207;
+  font-family: "Arial", sans-serif;
+}
+  #result {
+    width: 350px;
+    height: 175px;
+    resize: none;       /* disables resize handle */
+    border: none;       /* removes border */
+    outline: none;      /* removes focus outline */
+    background: #f9f9f9; /* optional: soft background */
+    font-family: inherit;
+    font-size: 14px;
+  }
+</style>
+
 </head>
 <body>
 <img src = "logo.png" width = 350px height =350px>
@@ -15,14 +37,47 @@
 
   <button onclick="borrowBook()">Borrow</button>
   <button onclick="returnBook()">Return</button>
-
+  <input type="radio"><br><br>
+  <textarea id="result" readonly></textarea>
   <pre id="output"></pre>
 
   <script>
     const scriptURL = "https://script.google.com/macros/s/AKfycbzZnKHU2PqUXi0OLmpTEVYHqy8UoAzsWd30ARnqJSh4vspz7nZrWZl846hXAgJvKwTQ/exec"; 
-    // replace with your deployed Apps Script URL
+    const sheetURL = `https://docs.google.com/spreadsheets/d/1r64xu7QXeSmqGn5WD1aCZDK2EPnM5XXQA0M-OJiRQcc/export?format=csv&gid=0`;
+    let sheetData = [];
+    
+    fetch(sheetURL)
+      .then(res => res.text())
+      .then(csv => {
+        sheetData = csv.split("\n").map(r => r.split(","));
+        console.log(sheetData); // See full sheet in console
+      });
+      
+      
+      function findBook() {
+      const bookId = document.getElementById("bookId").value.trim();
+      const resultBox = document.getElementById("result");
 
-    function borrowBook() {
+      if (!bookId) {
+        resultBox.value = "Please enter a Book Number.";
+        return;
+      }
+
+      // Find matching row by Book number (col 0)
+      const row = sheetData.find((r, i) => i > 0 && r[0] === bookId);
+
+      if (row) {
+        resultBox.value =
+          `Book Name: ${row[1]}\n` +
+          `Donor: ${row[3]}\n` +
+          `Publisher: ${row[4]}\n` +
+          `Author: ${row[5]}`;
+      } else {
+        resultBox.value = "Book Number not found.";
+      }
+    }
+
+    function borrowBookOnSheet() {
       let name = document.getElementById("nameInput").value.trim();
       let book = document.getElementById("bookInput").value.trim();
 
@@ -43,7 +98,7 @@
         document.getElementById("output").textContent = "Error: " + err;
       });
     }
-    function returnBook() {
+    function returnBookOnSheet() {
       let name = "In box";
       let book = document.getElementById("bookInput").value.trim();
 
@@ -64,7 +119,13 @@
         document.getElementById("output").textContent = "Error: " + err;
       });
     }
+    
+    function borrowBook(){
+      findBook();
+    }
+    function returnBook(){
+      findBook();
+    }
   </script>
 </body>
 </html>
-
