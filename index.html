@@ -12,121 +12,146 @@ body {
   color: #ea5207;
   font-family: "Arial", sans-serif;
 }
-  #result {
-    width: 350px;
-    height: 175px;
-    resize: none;       /* disables resize handle */
-    border: none;       /* removes border */
-    outline: none;      /* removes focus outline */
-    background: #f9f9f9; /* optional: soft background */
-    font-family: inherit;
-    font-size: 14px;
-  }
+#result {
+  width: 350px;
+  height: 175px;
+  resize: none;       /* disables resize handle */
+  border: none;       /* removes border */
+  outline: none;      /* removes focus outline */
+  background: #f9f9f9;
+  font-family: inherit;
+  font-size: 14px;
+}
+#confirmBtn {
+  margin-top: 10px;
+  display: none; /* hidden until a book is found */
+}
 </style>
 
 </head>
 <body>
-<img src = "logo.png" width = 350px height =350px>
-  <h2>HSS Rani Lakshmibai Shakha Library</h2>
+<img src="logo.png" width="350px" height="350px">
+<h2>HSS Rani Lakshmibai Shakha Library</h2>
 
-  <label>Name: </label>
-  <input type="text" id="nameInput"><br><br>
+<label>Name: </label>
+<input type="text" id="nameInput"><br><br>
 
-  <label>Book: </label>
-  <input type="text" id="bookInput"><br><br>
+<label>Book: </label>
+<input type="text" id="bookInput"><br><br>
 
-  <button onclick="borrowBook()">Borrow</button>
-  <button onclick="returnBook()">Return</button>
-  <textarea id="result" readonly></textarea>
-  <pre id="output"></pre>
+<button onclick="borrowBook()">Borrow</button>
+<button onclick="returnBook()">Return</button>
+<br><br>
 
-  <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbzZnKHU2PqUXi0OLmpTEVYHqy8UoAzsWd30ARnqJSh4vspz7nZrWZl846hXAgJvKwTQ/exec"; 
-    const sheetURL = `https://docs.google.com/spreadsheets/d/1r64xu7QXeSmqGn5WD1aCZDK2EPnM5XXQA0M-OJiRQcc/export?format=csv&gid=0`;
-    let sheetData = [];
-    
-    fetch(sheetURL)
-      .then(res => res.text())
-      .then(csv => {
-        sheetData = csv.split("\n").map(r => r.split(","));
-        console.log(sheetData); // See full sheet in console
-      });
-      
-      
-      function findBook() {
-      const bookId = document.getElementById("bookInput").value.trim();
-      const resultBox = document.getElementById("result");
+<textarea id="result" readonly></textarea><br>
+<button id="confirmBtn" onclick="confirmAction()">Confirm</button>
 
-      if (!bookId) {
-        resultBox.value = "Please enter a Book Number.";
-        return;
-      }
+<pre id="output"></pre>
 
-      // Find matching row by Book number (col 0)
-      const row = sheetData.find((r, i) => i > 0 && r[0] === bookId);
+<script>
+  const scriptURL = "YOUR_APPS_SCRIPT_URL"; 
+  const sheetURL = "YOUR_SHEET_CSV_URL"; 
+  let sheetData = [];
+  let pendingAction = null; // "borrow" or "return"
 
-      if (row) {
-        resultBox.value =
-          `Book Name: ${row[1]}\n` +
-          `Donor: ${row[3]}\n` +
-          `Publisher: ${row[4]}\n` +
-          `Author: ${row[5]}`;
-      } else {
-        resultBox.value = "Book Number not found.";
-      }
+  fetch(sheetURL)
+    .then(res => res.text())
+    .then(csv => {
+      sheetData = csv.split("\n").map(r => r.split(","));
+    });
+
+  function findBook() {
+    const bookId = document.getElementById("bookInput").value.trim();
+    const resultBox = document.getElementById("result");
+
+    if (!bookId) {
+      resultBox.value = "Please enter a Book Number.";
+      return false;
     }
 
-    function borrowBookOnSheet() {
-      let name = document.getElementById("nameInput").value.trim();
-      let book = document.getElementById("bookInput").value.trim();
+    const row = sheetData.find((r, i) => i > 0 && r[0] === bookId);
 
-      let data = new URLSearchParams();
-      data.append("name", name);
-      data.append("book", book);
+    if (row) {
+      resultBox.value =
+        `Book Name: ${row[1]}\n` +
+        `Donor: ${row[3]}\n` +
+        `Publisher: ${row[4]}\n` +
+        `Author: ${row[5]}\n\n` +
+        "Press Confirm if this is correct.";
+      document.getElementById("confirmBtn").style.display = "inline-block";
+      return true;
+    } else {
+      resultBox.value = "Book Number not found.";
+      document.getElementById("confirmBtn").style.display = "none";
+      return false;
+    }
+  }
 
-      fetch(scriptURL, {
-        method: "POST",
-        body: data,
-        headers: { "Content-Type": "application/x-www-form-urlencoded" }
-      })
-      .then(res => res.json())
-      .then(json => {
-        document.getElementById("output").textContent = "The book has been borrowed";
-      })
-      .catch(err => {
-        document.getElementById("output").textContent = "Error: " + err;
-      });
-    }
-    function returnBookOnSheet() {
-      let name = "In box";
-      let book = document.getElementById("bookInput").value.trim();
+  function borrowBookOnSheet() {
+    let name = document.getElementById("nameInput").value.trim();
+    let book = document.getElementById("bookInput").value.trim();
 
-      let data = new URLSearchParams();
-      data.append("name", name);
-      data.append("book", book);
+    let data = new URLSearchParams();
+    data.append("name", name);
+    data.append("book", book);
 
-      fetch(scriptURL, {
-        method: "POST",
-        body: data,
-        headers: { "Content-Type": "application/x-www-form-urlencoded" }
-      })
-      .then(res => res.json())
-      .then(json => {
-        document.getElementById("output").textContent = "The book has been returned";
-      })
-      .catch(err => {
-        document.getElementById("output").textContent = "Error: " + err;
-      });
+    fetch(scriptURL, {
+      method: "POST",
+      body: data,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" }
+    })
+    .then(res => res.json())
+    .then(json => {
+      document.getElementById("output").textContent = "The book has been borrowed.";
+    })
+    .catch(err => {
+      document.getElementById("output").textContent = "Error: " + err;
+    });
+  }
+
+  function returnBookOnSheet() {
+    let name = "In box";
+    let book = document.getElementById("bookInput").value.trim();
+
+    let data = new URLSearchParams();
+    data.append("name", name);
+    data.append("book", book);
+
+    fetch(scriptURL, {
+      method: "POST",
+      body: data,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" }
+    })
+    .then(res => res.json())
+    .then(json => {
+      document.getElementById("output").textContent = "The book has been returned.";
+    })
+    .catch(err => {
+      document.getElementById("output").textContent = "Error: " + err;
+    });
+  }
+
+  function borrowBook() {
+    if (findBook()) {
+      pendingAction = "borrow";
     }
-    
-    function borrowBook(){
-      findBook();
+  }
+
+  function returnBook() {
+    if (findBook()) {
+      pendingAction = "return";
     }
-    function returnBook(){
-      findBook();
+  }
+
+  function confirmAction() {
+    if (pendingAction === "borrow") {
+      borrowBookOnSheet();
+    } else if (pendingAction === "return") {
+      returnBookOnSheet();
     }
-  </script>
+    pendingAction = null;
+    document.getElementById("confirmBtn").style.display = "none";
+  }
+</script>
 </body>
 </html>
-
-
