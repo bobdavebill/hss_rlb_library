@@ -37,7 +37,7 @@
       })
       .then(res => res.json())
       .then(json => {
-        
+        document.getElementById("output").textContent = "The book has been borrowed";
       })
       .catch(err => {
         document.getElementById("output").textContent = "Error: " + err;
@@ -58,7 +58,7 @@
       })
       .then(res => res.json())
       .then(json => {
-        
+        document.getElementById("output").textContent = "The book has been returned";
       })
       .catch(err => {
         document.getElementById("output").textContent = "Error: " + err;
@@ -67,3 +67,4 @@
   </script>
 </body>
 </html>
+
