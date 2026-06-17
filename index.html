@@ -91,6 +91,9 @@ pre#output {
 
   <h3>Account</h3>
 
+  <input type="text" id="nameInput" placeholder="Full Name">
+
+
 <input type="email" id="emailInput" placeholder="Email">
 
 <input type="password" id="passwordInput" placeholder="Password">
@@ -137,8 +140,11 @@ const auth = firebase.auth();
 
 function signup() {
 
+  const name =
+    document.getElementById("nameInput").value.trim();
+
   const email =
-    document.getElementById("emailInput").value;
+    document.getElementById("emailInput").value.trim();
 
   const password =
     document.getElementById("passwordInput").value;
@@ -147,10 +153,25 @@ function signup() {
     email,
     password
   )
-  .catch(err => alert(err.message));
+  .then((userCredential) => {
+
+    return userCredential.user.updateProfile({
+      displayName: name
+    });
+
+  })
+  .then(() => {
+
+    alert("Account created successfully");
+
+  })
+  .catch(err => {
+
+    alert(err.message);
+
+  });
 
 }
-
 
 function login() {
 
@@ -192,7 +213,8 @@ auth.onAuthStateChanged(user => {
   if (user) {
 
     status.textContent =
-      "Logged in as " + user.email;
+      "Logged in as " +
+      (user.displayName || user.email);
 
   } else {
 
