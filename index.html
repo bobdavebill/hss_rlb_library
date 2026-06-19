@@ -123,6 +123,7 @@ pre#output {
 
 <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore-compat.js"></script>
 <script> 
 
 const firebaseConfig = {
@@ -137,6 +138,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
+const db = firebase.firestore();
 
 function signup() {
 
@@ -225,118 +227,160 @@ auth.onAuthStateChanged(user => {
 
 });
 
-  const scriptURL = "https://script.google.com/macros/s/AKfycbzZnKHU2PqUXi0OLmpTEVYHqy8UoAzsWd30ARnqJSh4vspz7nZrWZl846hXAgJvKwTQ/exec"; 
-  const sheetURL = "https://docs.google.com/spreadsheets/d/1r64xu7QXeSmqGn5WD1aCZDK2EPnM5XXQA0M-OJiRQcc/export?format=csv&gid=0"; 
-  let sheetData = [];
   let pendingAction = null;
+  let currentBook = null;
 
-  fetch(sheetURL)
-    .then(res => res.text())
-    .then(csv => {
-      sheetData = csv.split("\n").map(r => r.split(","));
-    });
+ async function findBook() {
 
-  function findBook() {
-    const bookId = document.getElementById("bookInput").value.trim();
-    const resultBox = document.getElementById("result");
+    const bookId =
+        document.getElementById("bookInput").value.trim();
+
+    const resultBox =
+        document.getElementById("result");
 
     if (!bookId) {
-      resultBox.value = "Please enter a Book Number.";
-      return false;
+
+        resultBox.value =
+            "Please enter a Book Number.";
+
+        return false;
+
     }
 
-    const row = sheetData.find((r, i) => i > 0 && r[0] === bookId);
+    const doc =
+        await db.collection("books")
+        .doc(bookId)
+        .get();
 
-    if (row) {
-      resultBox.value =
-        `Book Name: ${row[1]}\n` +
-        `Publisher: ${row[4]}\n` +
-        `Author: ${row[5]}\n\n` +
-        "Press Confirm if this is correct.";
-      document.getElementById("confirmBtn").style.display = "block";
-      return true;
-    } else {
-      resultBox.value = "Book Number not found.";
-      document.getElementById("confirmBtn").style.display = "none";
-      return false;
+    if (!doc.exists) {
+
+        resultBox.value =
+            "Book Number not found.";
+
+        document.getElementById("confirmBtn").style.display =
+            "none";
+
+        return false;
+
     }
-  }
 
-  function borrowBookOnSheet() {
-    const user = auth.currentUser;
+    currentBook = doc;
 
-if (!user) {
+    const book = doc.data();
 
-  alert("Please log in first");
+    resultBox.value =
+        `Book Name: ${book.bookName}
 
-  return;
+Publisher: ${book.publisher}
+
+Author: ${book.author}
+
+Status: ${book.status}
+
+Press Confirm if this is correct.`;
+
+    document.getElementById("confirmBtn").style.display =
+        "block";
+
+    return true;
 
 }
 
-let name = user.email;
-    let book = document.getElementById("bookInput").value.trim();
+async function borrowBookOnSheet() {
 
-    let data = new URLSearchParams();
-    data.append("name", name);
-    data.append("book", book);
+    const user = auth.currentUser;
 
-    fetch(scriptURL, {
-      method: "POST",
-      body: data,
-      headers: { "Content-Type": "application/x-www-form-urlencoded" }
-    })
-    .then(res => res.json())
-    .then(() => {
-      document.getElementById("output").textContent = "The book has been borrowed.";
-    })
-    .catch(err => {
-      document.getElementById("output").textContent = "Error: " + err;
+    if (!user) {
+
+        alert("Please log in first");
+
+        return;
+
+    }
+
+    const book =
+        currentBook.data();
+
+    if (book.status !== "In box") {
+
+        document.getElementById("output").textContent =
+            "Book already borrowed by " +
+            book.status;
+
+        return;
+
+    }
+
+    await currentBook.ref.update({
+
+        status: user.displayName
+
     });
-  }
 
-  function returnBookOnSheet() {
-    let name = "In box";
-    let book = document.getElementById("bookInput").value.trim();
+    document.getElementById("output").textContent =
+        "Book borrowed successfully.";
 
-    let data = new URLSearchParams();
-    data.append("name", name);
-    data.append("book", book);
+}
 
-    fetch(scriptURL, {
-      method: "POST",
-      body: data,
-      headers: { "Content-Type": "application/x-www-form-urlencoded" }
-    })
-    .then(res => res.json())
-    .then(() => {
-      document.getElementById("output").textContent = "The book has been returned.";
-    })
-    .catch(err => {
-      document.getElementById("output").textContent = "Error: " + err;
+async function returnBookOnSheet() {
+
+    const book =
+        currentBook.data();
+
+    if (book.status === "In box") {
+
+        document.getElementById("output").textContent =
+            "Book is already in the box.";
+
+        return;
+
+    }
+
+    await currentBook.ref.update({
+
+        status: "In box"
+
     });
-  }
 
-  function borrowBook() {
+    document.getElementById("output").textContent =
+        "Book returned successfully.";
+
+}
+
+  async function borrowBook() {
     if (findBook()) {
       pendingAction = "borrow";
     }
   }
 
-  function returnBook() {
+  async function returnBook() {
     if (findBook()) {
       pendingAction = "return";
     }
   }
 
-  function confirmAction() {
+  async function confirmAction() {
+
     if (pendingAction === "borrow") {
-      borrowBookOnSheet();
-    } else if (pendingAction === "return") {
-      returnBookOnSheet();
+
+        await borrowBookOnSheet();
+
     }
+
+    else if (pendingAction === "return") {
+
+        await returnBookOnSheet();
+
+    }
+
     pendingAction = null;
-    document.getElementById("confirmBtn").style.display = "none";
-  }
+
+    currentBook = null;
+
+    document.getElementById("confirmBtn").style.display =
+        "none";
+
+}
 </script>
 </body>
 </html>
