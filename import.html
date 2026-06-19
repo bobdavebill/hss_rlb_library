@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Firestore Book Importer</title>
+
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore-compat.js"></script>
+
+<style>
+body{
+    font-family:Arial,sans-serif;
+    max-width:700px;
+    margin:auto;
+    padding:30px;
+}
+
+button{
+    padding:12px 20px;
+    margin:10px 0;
+    font-size:16px;
+}
+
+pre{
+    background:#f5f5f5;
+    padding:15px;
+    height:300px;
+    overflow:auto;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Library Firestore Importer</h1>
+
+<p id="status">Not logged in</p>
+
+<button onclick="login()">Login with Google</button>
+
+<button onclick="importBooks()">Import Books</button>
+
+<pre id="log"></pre>
+
+<script>
+
+const firebaseConfig = {
+
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.firebasestorage.app",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+const sheetURL =
+"https://docs.google.com/spreadsheets/d/1r64xu7QXeSmqGn5WD1aCZDK2EPnM5XXQA0M-OJiRQcc/export?format=csv&gid=0";
+
+function log(message){
+
+    document.getElementById("log").textContent +=
+        message + "\n";
+
+}
+
+function login(){
+
+    const provider =
+        new firebase.auth.GoogleAuthProvider();
+
+    auth.signInWithPopup(provider);
+
+}
+
+auth.onAuthStateChanged(user=>{
+
+    if(user){
+
+        document.getElementById("status").textContent =
+            "Logged in as " + user.email;
+
+    }else{
+
+        document.getElementById("status").textContent =
+            "Not logged in";
+
+    }
+
+});
+
+async function importBooks(){
+
+    if(!auth.currentUser){
+
+        alert("Please log in first.");
+
+        return;
+
+    }
+
+    log("Downloading spreadsheet...");
+
+    const csv =
+        await fetch(sheetURL).then(r=>r.text());
+
+    const rows =
+        csv.trim().split("\n").map(r=>r.split(","));
+
+    log("Found " + (rows.length-1) + " books.");
+
+    for(let i=1;i<rows.length;i++){
+
+        const row=rows[i];
+
+        const bookID=row[0].trim();
+
+        if(bookID==="") continue;
+
+        await db.collection("books")
+        .doc(bookID)
+        .set({
+
+            title: row[1]?.trim() || "",
+            category: row[2]?.trim() || "",
+            language: row[3]?.trim() || "",
+            publisher: row[4]?.trim() || "",
+            author: row[5]?.trim() || "",
+
+            borrower: row[6]?.trim() || "",
+
+            available:
+                (row[6]||"").trim()===""
+
+        });
+
+        log(
+            "Imported "
+            + bookID
+            + " (" + i + "/" + (rows.length-1) + ")"
+        );
+
+    }
+
+    log("");
+    log("Finished importing!");
+
+}
+
+</script>
+
+</body>
+</html>
