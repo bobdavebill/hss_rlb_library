@@ -124,22 +124,21 @@ async function importBooks(){
 
         if(bookID==="") continue;
 
-        await db.collection("books")
-        .doc(bookID)
-        .set({
+      await db.collection("books")
+.doc(bookID)
+.set({
 
-            title: row[1]?.trim() || "",
-            category: row[2]?.trim() || "",
-            language: row[3]?.trim() || "",
-            publisher: row[4]?.trim() || "",
-            author: row[5]?.trim() || "",
+    bookName: row[1]?.trim() || "",
 
-            borrower: row[6]?.trim() || "",
+    status: row[2]?.trim() || "",
 
-            available:
-                (row[6]||"").trim()===""
+    donor: row[3]?.trim() || "",
 
-        });
+    publisher: row[4]?.trim() || "",
+
+    author: row[5]?.trim() || ""
+
+});
 
         log(
             "Imported "
