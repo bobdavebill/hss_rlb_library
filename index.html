@@ -349,20 +349,21 @@ async function borrowBookOnSheet() {
 
     if (!user) {
 
-        alert("Please log in first");
-
+        alert("Please log in first.");
         return;
 
     }
 
-    const book =
-        currentBook.data();
+    const freshBook = await currentBook.ref.get();
+    const book = freshBook.data();
 
-    if (book.status !== "In box") {
+    const borrower = user.displayName || user.email;
+
+    // Members can only borrow available books
+    if (currentRole !== "librarian" && book.status !== "In box") {
 
         document.getElementById("output").textContent =
-            "Book already borrowed by " +
-            book.status;
+            "This book is already borrowed by " + book.status;
 
         return;
 
@@ -370,7 +371,7 @@ async function borrowBookOnSheet() {
 
     await currentBook.ref.update({
 
-        status: user.displayName
+        status: borrower
 
     });
 
@@ -381,13 +382,38 @@ async function borrowBookOnSheet() {
 
 async function returnBookOnSheet() {
 
-    const book =
-        currentBook.data();
+    const user = auth.currentUser;
 
+    if (!user) {
+
+        alert("Please log in first.");
+        return;
+
+    }
+
+    const freshBook = await currentBook.ref.get();
+    const book = freshBook.data();
+
+    const borrower = user.displayName || user.email;
+
+    // Already available
     if (book.status === "In box") {
 
         document.getElementById("output").textContent =
-            "Book is already in the box.";
+            "This book is already available.";
+
+        return;
+
+    }
+
+    // Members may only return their own books
+    if (
+        currentRole !== "librarian" &&
+        book.status !== borrower
+    ) {
+
+        document.getElementById("output").textContent =
+            "You can only return books you have borrowed.";
 
         return;
 
