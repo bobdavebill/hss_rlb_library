@@ -139,6 +139,7 @@ firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
 const db = firebase.firestore();
+let currentRole = "";
 
 function signup() {
 
@@ -152,27 +153,43 @@ function signup() {
     document.getElementById("passwordInput").value;
 
   auth.createUserWithEmailAndPassword(
-    email,
-    password
-  )
-  .then((userCredential) => {
+  email,
+  password
+)
+.then((userCredential) => {
 
-    return userCredential.user.updateProfile({
-      displayName: name
-    });
+  return userCredential.user.updateProfile({
+    displayName: name
+  });
 
-  })
-  .then(() => {
+})
+.then(() => {
 
-    alert("Account created successfully");
+  return db.collection("users")
+  .doc(auth.currentUser.uid)
+  .set({
 
-  })
-  .catch(err => {
+    name: auth.currentUser.displayName,
 
-    alert(err.message);
+    email: auth.currentUser.email,
+
+    role: "member",
+
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
 
   });
 
+})
+.then(() => {
+
+  alert("Account created successfully");
+
+})
+.catch(err => {
+
+  alert(err.message);
+
+});
 }
 
 function login() {
@@ -207,18 +224,34 @@ function logout() {
 
 }
 
-auth.onAuthStateChanged(user => {
+auth.onAuthStateChanged(async user => {
 
   const status =
     document.getElementById("userStatus");
 
   if (user) {
 
-    status.textContent =
-      "Logged in as " +
-      (user.displayName || user.email);
+    const doc = await db
+        .collection("users")
+        .doc(user.uid)
+        .get();
 
-  } else {
+    if (doc.exists) {
+
+        currentRole = doc.data().role;
+
+    } else {
+
+        currentRole = "member";
+
+    }
+
+    status.textContent =
+        "Logged in as " +
+        (user.displayName || user.email) +
+        " (" + currentRole + ")";
+
+} else {
 
     status.textContent =
       "Not logged in";
