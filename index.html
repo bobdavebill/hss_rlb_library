@@ -411,7 +411,7 @@ async function borrowBookOnSheet() {
     if (currentRole !== "librarian" && book.status !== "In box") {
 
         document.getElementById("output").textContent =
-            "This book is already borrowed by " + book.status;
+            "Please see a librarian";
 
         return;
 
