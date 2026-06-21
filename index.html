@@ -89,10 +89,11 @@ pre#output {
   <h2>HSS Rani Lakshmibai Shakha Library</h2>
 
 
-  <h3>Account</h3>
+  <div id="loginScreen">
 
-  <input type="text" id="nameInput" placeholder="Full Name">
+<h3>Account</h3>
 
+<input type="text" id="nameInput" placeholder="Full Name">
 
 <input type="email" id="emailInput" placeholder="Email">
 
@@ -104,22 +105,31 @@ pre#output {
 
 <button onclick="googleLogin()">Sign In With Google</button>
 
-<button onclick="logout()">Logout</button>
+</div>
 
-<p id="userStatus">Not logged in</p>
+<div id="libraryScreen" style="display:none;">
+
+<p id="userStatus"></p>
+
+<button onclick="logout()">Logout</button>
 
 <hr>
 
-  <label for="bookInput">Book:</label>
-  <input type="text" id="bookInput">
+<label for="bookInput">Book:</label>
+<input type="text" id="bookInput">
 
-  <button onclick="borrowBook()">Borrow</button>
-  <button onclick="returnBook()">Return</button>
+<button onclick="borrowBook()">Borrow</button>
+<button onclick="returnBook()">Return</button>
 
-  <textarea id="result" readonly></textarea>
-  <button id="confirmBtn" onclick="confirmAction()">Confirm</button>
+<textarea id="result" readonly></textarea>
 
-  <pre id="output"></pre>
+<button id="confirmBtn" onclick="confirmAction()">
+Confirm
+</button>
+
+<pre id="output"></pre>
+
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-auth-compat.js"></script>
@@ -244,43 +254,55 @@ function googleLogin() {
 
 function logout() {
 
-  auth.signOut();
+    auth.signOut();
+
+    document.getElementById("emailInput").value = "";
+    document.getElementById("passwordInput").value = "";
+    document.getElementById("bookInput").value = "";
+    document.getElementById("result").value = "";
+    document.getElementById("output").textContent = "";
 
 }
 
 auth.onAuthStateChanged(async user => {
 
-  const status =
-    document.getElementById("userStatus");
+    const loginScreen =
+        document.getElementById("loginScreen");
 
-  if (user) {
+    const libraryScreen =
+        document.getElementById("libraryScreen");
 
-    const doc = await db
-        .collection("users")
-        .doc(user.uid)
-        .get();
+    const status =
+        document.getElementById("userStatus");
 
-    if (doc.exists) {
+    if (user) {
 
-        currentRole = doc.data().role;
+        const doc = await db
+            .collection("users")
+            .doc(user.uid)
+            .get();
 
-    } else {
+        currentRole =
+            doc.exists
+            ? doc.data().role
+            : "member";
 
-        currentRole = "member";
+        status.textContent =
+            "Welcome, " +
+            (user.displayName || user.email) +
+            " (" + currentRole + ")";
+
+        loginScreen.style.display = "none";
+        libraryScreen.style.display = "block";
 
     }
 
-    status.textContent =
-        "Logged in as " +
-        (user.displayName || user.email) +
-        " (" + currentRole + ")";
+    else {
 
-} else {
+        loginScreen.style.display = "block";
+        libraryScreen.style.display = "none";
 
-    status.textContent =
-      "Not logged in";
-
-  }
+    }
 
 });
 
