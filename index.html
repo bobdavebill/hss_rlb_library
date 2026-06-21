@@ -347,14 +347,40 @@ auth.onAuthStateChanged(async user => {
 
     const book = doc.data();
 
-    resultBox.value =
-        `Book Name: ${book.bookName}
+    let statusText;
+
+if (book.status === "In box") {
+
+    statusText = "Available";
+
+}
+
+else if (
+    auth.currentUser &&
+    book.status === auth.currentUser.uid
+) {
+
+    statusText = "Borrowed by you";
+
+    // Or, if you prefer:
+    // statusText = auth.currentUser.displayName;
+
+}
+
+else {
+
+    statusText = "Please see a librarian";
+
+}
+
+resultBox.value =
+`Book Name: ${book.bookName}
 
 Publisher: ${book.publisher}
 
 Author: ${book.author}
 
-Status: ${book.status}
+Status: ${statusText}
 
 Press Confirm if this is correct.`;
 
@@ -416,7 +442,7 @@ async function returnBookOnSheet() {
     const freshBook = await currentBook.ref.get();
     const book = freshBook.data();
 
-    const borrower = user.displayName || user.email;
+    const borrower = user.uid;
 
     // Already available
     if (book.status === "In box") {
