@@ -405,7 +405,7 @@ async function borrowBookOnSheet() {
     const freshBook = await currentBook.ref.get();
     const book = freshBook.data();
 
-    const borrower = user.displayName || user.email;
+    const borrower = user.uid;
 
     // Members can only borrow available books
     if (currentRole !== "librarian" && book.status !== "In box") {
