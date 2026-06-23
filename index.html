@@ -130,7 +130,13 @@ Confirm
 <pre id="output"></pre>
 
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
+<script>
+emailjs.init({
+    publicKey: "XKilVYlYGnCCNrFzI"
+});
+</script>
 <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore-compat.js"></script>
@@ -200,6 +206,18 @@ function signup() {
   alert(err.message);
 
 });
+emailjs.send(
+    "service_pko02bg",
+    "template_kv5qqke",
+    {
+        name: auth.currentUser.displayName,
+        email: auth.currentUser.email
+    }
+)
+.then(() => {
+    console.log("Welcome email sent");
+})
+.catch(console.error);
 }
 
 function login() {
