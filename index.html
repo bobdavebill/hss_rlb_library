@@ -159,67 +159,65 @@ let currentRole = "";
 
 function signup() {
 
-  const name =
-    document.getElementById("nameInput").value.trim();
+    const name = document.getElementById("nameInput").value.trim();
+    const email = document.getElementById("emailInput").value.trim();
+    const password = document.getElementById("passwordInput").value;
 
-  const email =
-    document.getElementById("emailInput").value.trim();
+    let newUser;
 
-  const password =
-    document.getElementById("passwordInput").value;
+    auth.createUserWithEmailAndPassword(email, password)
 
-  auth.createUserWithEmailAndPassword(
-  email,
-  password
-)
-.then((userCredential) => {
+    .then((userCredential) => {
 
-  return userCredential.user.updateProfile({
-    displayName: name
-  });
+        newUser = userCredential.user;
 
-})
-.then(() => {
+        return newUser.updateProfile({
+            displayName: name
+        });
 
-  return db.collection("users")
-  .doc(auth.currentUser.uid)
-  .set({
+    })
 
-    name: auth.currentUser.displayName,
+    .then(() => {
 
-    email: auth.currentUser.email,
+        return db.collection("users")
+        .doc(newUser.uid)
+        .set({
 
-    role: "member",
+            name: name,
+            email: newUser.email,
+            role: "member",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
 
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-  });
+    })
 
-})
-.then(() => {
+    .then(() => {
 
-    return emailjs.send(
-        "service_pko02bg",
-        "template_kv5qqke",
-        {
-            name: auth.currentUser.displayName,
-            email: auth.currentUser.email
-        }
-    );
+        return emailjs.send(
+            "service_pko02bg",
+            "template_kv5qqke",
+            {
+                name: name,
+                email: newUser.email
+            }
+        );
 
-})
-.then(() => {
+    })
 
-    alert("Account created successfully");
-    console.log("Welcome email sent");
+    .then(() => {
 
-})
-.catch(err => {
+        alert("Account created successfully");
 
-    console.error(err);
-    alert(err.message);
+    })
 
-});
+    .catch(err => {
+
+        console.error(err);
+        alert(err.message);
+
+    });
+
 }
 
 function login() {
