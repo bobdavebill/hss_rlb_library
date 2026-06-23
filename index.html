@@ -198,26 +198,28 @@ function signup() {
 })
 .then(() => {
 
-  alert("Account created successfully");
+    return emailjs.send(
+        "service_pko02bg",
+        "template_kv5qqke",
+        {
+            name: auth.currentUser.displayName,
+            email: auth.currentUser.email
+        }
+    );
+
+})
+.then(() => {
+
+    alert("Account created successfully");
+    console.log("Welcome email sent");
 
 })
 .catch(err => {
 
-  alert(err.message);
+    console.error(err);
+    alert(err.message);
 
 });
-emailjs.send(
-    "service_pko02bg",
-    "template_kv5qqke",
-    {
-        name: auth.currentUser.displayName,
-        email: auth.currentUser.email
-    }
-)
-.then(() => {
-    console.log("Welcome email sent");
-})
-.catch(console.error);
 }
 
 function login() {
